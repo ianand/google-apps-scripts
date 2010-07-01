@@ -1,6 +1,7 @@
 // REFRACTION
 // A Google Apps Script that imports Lighthouse (lighthouseapp.com) tickets into
-// a spreadsheet.
+// a spreadsheet. The script accepts a lighthouse query and dumps the ticket
+// information at the currently selected cell.
 
 // Configuration: Set variables (1) through (3). If you don't change these
 // values you'll get the test data I used to write the script.
@@ -16,8 +17,8 @@ var SUBDOMAIN = "refraction";
 
 function importLighthouseTickets() {
 
-  var query = Browser.inputBox("Lighthouse search query (e.g. 'test state:open')");
-  var data = getTicketData("test");
+  var query = Browser.inputBox("Lighthouse search query (e.g. 'test state:open' )");
+  var data = getTicketData(query);
   // Logger.log("XML Result " + data);
   var tickets = parseTicketData(data);
   writeToSpreadsheet(tickets);
@@ -95,4 +96,10 @@ function importLighthouseTickets() {
     
   } 
 }
+
+// TODO:
+//
+// - Query user for token, project id, subdomain only once (by saving info in spreadsheet for later use).
+// - Parse out ticket data for "meta data" in tickets to indicate time spent and estimated completion.
+
 ​
