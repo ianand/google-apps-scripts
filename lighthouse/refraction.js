@@ -15,37 +15,62 @@ var PROJECT_ID = "55411";
 // (3) Subdomain. e.g. the "foo" in http://foo.lighthouseapp.com
 var SUBDOMAIN = "refraction"; 
 
-function importLighthouseTickets() {
+// Ticket object. This is a Factory object. Tickets are created by
+// this object by calling Tickets.createTicketFromXml(). Do not
+// use new().
+var Ticket = {
+  
+  // "OrderedHash" of ticket field names. 
+  // We need a list of ticket fields and that list to have a consistent
+  // order. Could have just used an array but wanted to have better performance.
+  ticketFieldsHash: {},
+  ticketFieldsArray: [],
+  saveTicketFieldName: function (name) {
+    if(!this.ticketFieldsHash[name]) {
+      this.ticketFieldsHash[name] = "";
+      this.ticketFieldsArray.push(name);
+    }
+  },  
+  
+  // Parses a <ticket> XML object and returns a javascript Object representation
+  createTicketFromXml: function (xml) {
+    // Create a new ticket "instance".
+    var ticket = {};
 
-  var query = Browser.inputBox("Lighthouse search query (e.g. 'test state:open' )");
-  var data = getTicketData(query);
-  // Logger.log("XML Result " + data);
-  var tickets = parseTicketData(data);
-  writeToSpreadsheet(tickets);
-        
-  // Ticket object
-  function createTicket(xml) {
-    var that = {};
-    
-    function getProperty(property) {
-      var value = "";
+    // Helper method to assign fields to the new instance from XML
+    var that = this; // helper this pointer
+    function extractXmlField(xmlElement) {
       try {
-        value = xml.getElement(property).getText();
+        // use lowercase version so we can easily match the name
+        // even if the user used a different case
+        var fieldName = xmlElement.getName().getLocalName().toLowerCase();
+        var fieldValue = xmlElement.getText();
+        
+        // Save the field to our new instance.
+        ticket[fieldName] = fieldValue;
+        
+        // Remember the field name for later.
+        that.saveTicketFieldName(fieldName);
       } catch(err) {
-        Logger.log("Error when looking for "+property+": " + err );
+        Logger.log("Error when extracting property: " + err );
       }
-      return value;
     }
     
-    that.title = getProperty("title");
-    that.bugNumber = getProperty("number");
-    that.url = getProperty("url");
-    that.state = getProperty("state");
-    that.assignedUserName = getProperty("assigned-user-name");
-        
-    return that;
+    var fields = xml.getElements();
+    if(fields != null && fields.length > 0) {
+      var length = fields.length;
+      for(var i = 0; i < length; i++) {
+       extractXmlField(fields[i]);
+      }
+    }
+    return ticket;    
   }
-  
+};
+
+// Queries lighthouse API and dumps the list of tickets at the actively
+// selected cell.
+function importLighthouseTickets() {
+    
   // Download ticket XML data from lighthouse api
   function getTicketData(query) {
     
@@ -64,7 +89,7 @@ function importLighthouseTickets() {
     var length = tickets.length;
     var result = [];
     for(var i = 0; i < length; i++) {
-      result.push(createTicket(tickets[i]));
+      result.push(Ticket.createTicketFromXml(tickets[i]));
     }
     return result;
   }
@@ -78,23 +103,32 @@ function importLighthouseTickets() {
     var column0 = range.getColumn();
     
     // Write the column labels
-    sheet.getRange(row0, column0+0).setValue("BugNumber");
-    sheet.getRange(row0, column0+1).setValue("Title");
-    sheet.getRange(row0, column0+2).setValue("URL");
-    sheet.getRange(row0, column0+3).setValue("State");
-    sheet.getRange(row0, column0+4).setValue("Assigned User");    
+    var fieldsLength = Ticket.ticketFieldsArray.length;
+    Logger.log("fieldsLength: " + fieldsLength);
+    for(var i = 0; i < fieldsLength; i++) {
+      sheet.getRange(row0, column0+i).setValue(Ticket.ticketFieldsArray[i]);
+    }
+    
+    row0++; // put results on a new line
     
     // Write out the ticket data to the spreadsheet
     var length = tickets.length;
     for(var i = 0; i < length; i++) {
-      sheet.getRange(row0+1+i, column0+0).setValue(tickets[i].bugNumber);
-      sheet.getRange(row0+1+i, column0+1).setValue(tickets[i].title);
-      sheet.getRange(row0+1+i, column0+2).setValue(tickets[i].url);
-      sheet.getRange(row0+1+i, column0+3).setValue(tickets[i].state);      
-      sheet.getRange(row0+1+i, column0+4).setValue(tickets[i].assignedUserName);       
-    }
-    
+      for(var j = 0; j < fieldsLength; j++) {
+        var ticket = tickets[i];
+        var fieldName = Ticket.ticketFieldsArray[j];
+        var fieldValue = ticket[fieldName];
+        if(fieldValue != undefined) {
+          sheet.getRange(row0+i, column0+j).setValue(fieldValue);
+        }
+      }
+    }    
   } 
+  
+  var query = Browser.inputBox("Lighthouse search query (e.g. 'test state:open' )");
+  var data = getTicketData(query);
+  var tickets = parseTicketData(data);
+  writeToSpreadsheet(tickets);  
 }
 
 // TODO:
