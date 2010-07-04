@@ -159,6 +159,7 @@ function importLighthouseTickets() {
 
 // TODO:
 //
+// - If outputting over previous run of the script will update the rows, rather than overwrite.
 // - Query user for token, project id, subdomain only once (by saving info in spreadsheet for later use).
 // - Parse out ticket data for "meta data" in tickets to indicate time spent and estimated completion.
 
