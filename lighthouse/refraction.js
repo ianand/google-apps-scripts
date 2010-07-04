@@ -102,21 +102,47 @@ function importLighthouseTickets() {
     var row0 = range.getRow();
     var column0 = range.getColumn();
     
-    // Write the column labels
-    var fieldsLength = Ticket.ticketFieldsArray.length;
-    Logger.log("fieldsLength: " + fieldsLength);
-    for(var i = 0; i < fieldsLength; i++) {
-      sheet.getRange(row0, column0+i).setValue(Ticket.ticketFieldsArray[i]);
+    // Default to printing all the ticket properties.
+    var ticketFields = Ticket.ticketFieldsArray;
+    var ticketFieldsLength = ticketFields.length;
+    
+    // If the active cell isn't empty than treat that row
+    // as the list of properties to print.
+    var activeCellContent = sheet.getRange(row0, column0).getValue();
+    if(activeCellContent != null && activeCellContent != "") {
+      ticketFields = [];
+      var i = 0;
+      while(activeCellContent != null && activeCellContent != "" ) {
+
+        // Save this as a property name to print
+        ticketFields.push(activeCellContent.toLowerCase());
+        
+        // Read the property name in the next column
+        i++;
+        activeCellContent = sheet.getRange(row0, column0+i).getValue();
+
+      }
+      
+      // ticketFields has changed so update the length
+      ticketFieldsLength = ticketFields.length;
+    } else {
+
+      // If the active cell is empty than print the default labels for the ticket 
+      // properties.
+      for(var i = 0; i < ticketFieldsLength; i++) {
+        sheet.getRange(row0, column0+i).setValue(Ticket.ticketFieldsArray[i]);
+      }
     }
     
-    row0++; // put results on a new line
+    // Start output of ticket data on the next line
+    row0++; 
     
     // Write out the ticket data to the spreadsheet
     var length = tickets.length;
     for(var i = 0; i < length; i++) {
-      for(var j = 0; j < fieldsLength; j++) {
+      for(var j = 0; j < ticketFieldsLength; j++) {
         var ticket = tickets[i];
-        var fieldName = Ticket.ticketFieldsArray[j];
+        var fieldName = ticketFields[j];
         var fieldValue = ticket[fieldName];
         if(fieldValue != undefined) {
           sheet.getRange(row0+i, column0+j).setValue(fieldValue);
@@ -135,5 +161,6 @@ function importLighthouseTickets() {
 //
 // - Query user for token, project id, subdomain only once (by saving info in spreadsheet for later use).
 // - Parse out ticket data for "meta data" in tickets to indicate time spent and estimated completion.
+
 
 ​
