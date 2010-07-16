@@ -148,7 +148,7 @@ function importLighthouseTickets() {
     var ticketNumberIndex = ticketFields.indexOf("number");
     function ticketNumberForRow(row)  {
       if(ticketNumberIndex < 0) {
-        return null;
+        return -1;
       }
       return sheet.getRange(row, column0 + ticketNumberIndex).getValue();
     }
@@ -161,16 +161,49 @@ function importLighthouseTickets() {
         }
       }  
     }
-
+    
+    //
+    // Helper functions for the tickets array.
+    //
+    function indexOfTicketNumber(ticketNumber) {
+      var length = tickets.length;
+      for(var i = 0; i < length; i ++) {
+        if(tickets[i].number == ticketNumber) {
+          return i;
+        }
+      }
+      return -1;
+    }
+    
+    //
+    // Output the tickets to the spreadsheet.
+    //
 
     // Start output of ticket data on the next line
-    var currentRow = row0++;
+    var currentRow = row0+1;
     
     // Write out the ticket data to the spreadsheet
     while(tickets.length > 0) {
+      
+      // If the current row is empty, then just output the next ticket
+      // in the tickets array.
       if(isRowEmpty(currentRow)) {
-        writeTicketToRow(tickets.shift(), currentRow);
+        var ticket = tickets.shift();
+        writeTicketToRow(ticket, currentRow);
+      } else {
+        
+        // If there's ticket info already here, write out the data that
+        // corresponds to this row. The corresponding ticket is found
+        // by ticket number.
+        var ticketNumber = ticketNumberForRow(currentRow);
+        var index = indexOfTicketNumber(ticketNumber);
+        if(index != "" && index >= 0) {
+          var ticket = tickets.splice(index, index)[0];
+          writeTicketToRow(ticket, currentRow);
+        }
       }
+      
+      // Try output on the next row of the sheet
       currentRow++;
     }    
   } 
@@ -183,7 +216,6 @@ function importLighthouseTickets() {
 
 // TODO:
 //
-// - If outputting over previous run of the script will update the rows, rather than overwrite.
 // - Query user for token, project id, subdomain only once (by saving info in spreadsheet for later use).
 // - Parse out ticket data for "meta data" in tickets to indicate time spent and estimated completion.
 
