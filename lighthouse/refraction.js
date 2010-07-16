@@ -134,20 +134,44 @@ function importLighthouseTickets() {
       }
     }
     
-    // Start output of ticket data on the next line
-    row0++; 
-    
-    // Write out the ticket data to the spreadsheet
-    var length = tickets.length;
-    for(var i = 0; i < length; i++) {
+
+    //
+    // Helper functions for Spreadsheet operations. Ideally
+    // I'd make these properties of the sheet object itself
+    // but Google Apps Script doesn't allow you to add new 
+    // properties to system defined objects.
+    //
+    function isRowEmpty(row) {
+      var rowValues = (sheet.getRange(row, column0, row, column0 + ticketFieldsLength).getValues())[0];
+      return "" == rowValues.join("");
+    }
+    var ticketNumberIndex = ticketFields.indexOf("number");
+    function ticketNumberForRow(row)  {
+      if(ticketNumberIndex < 0) {
+        return null;
+      }
+      return sheet.getRange(row, column0 + ticketNumberIndex).getValue();
+    }
+    function writeTicketToRow(ticket, row) {
       for(var j = 0; j < ticketFieldsLength; j++) {
-        var ticket = tickets[i];
         var fieldName = ticketFields[j];
         var fieldValue = ticket[fieldName];
         if(fieldValue != undefined) {
-          sheet.getRange(row0+i, column0+j).setValue(fieldValue);
+          sheet.getRange(row, column0+j).setValue(fieldValue);
         }
+      }  
+    }
+
+
+    // Start output of ticket data on the next line
+    var currentRow = row0++;
+    
+    // Write out the ticket data to the spreadsheet
+    while(tickets.length > 0) {
+      if(isRowEmpty(currentRow)) {
+        writeTicketToRow(tickets.shift(), currentRow);
       }
+      currentRow++;
     }    
   } 
   
