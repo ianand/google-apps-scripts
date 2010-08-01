@@ -27,7 +27,7 @@ var Ticket = {
   ticketFieldsArray: [],
   saveTicketFieldName: function (name) {
     if(!this.ticketFieldsHash[name]) {
-      this.ticketFieldsHash[name] = "";
+      this.ticketFieldsHash[name] = true;
       this.ticketFieldsArray.push(name);
     }
   },  
