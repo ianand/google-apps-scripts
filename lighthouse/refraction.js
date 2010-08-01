@@ -197,8 +197,8 @@ function importLighthouseTickets() {
         // by ticket number.
         var ticketNumber = ticketNumberForRow(currentRow);
         var index = indexOfTicketNumber(ticketNumber);
-        if(index != "" && index >= 0) {
-          var ticket = tickets.splice(index, index)[0];
+        if(index >= 0) {
+          var ticket = tickets.splice(index, 1)[0];
           writeTicketToRow(ticket, currentRow);
         }
       }
